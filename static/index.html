@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Patient Records</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="centered">
+<main class="card">
+  <h1>Patient Records</h1>
+  <p class="sub">Authorization demo</p>
+
+  <form id="login-form">
+    <label for="username">Username
+      <input id="username" name="username" autocomplete="username" autofocus required>
+    </label>
+    <label for="password">Password
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit" id="submit">Sign in</button>
+  </form>
+
+  <p id="error" class="error" hidden></p>
+
+  <details class="demo-accounts">
+    <summary>Demo accounts</summary>
+    <p class="hint">All use the password <code>demo</code>. Click one to fill the form.</p>
+    <div class="account-grid" id="accounts"></div>
+  </details>
+</main>
+
+<script src="/app.js"></script>
+<script>
+  // Mirrors seed.py. Handy when recording — click a name instead of typing.
+  // NOTE: v1 frontend, superseded by the React app in README2 stages 4-8.
+  const DEMO_ACCOUNTS = [
+    ["cokafor", "Nurse Chidinma Okafor", "nurse", "Ward 3"],
+    ["aobi", "Dr. Amaka Obi", "doctor", "Ward 3"],
+    ["tbakare", "Dr. Tunde Bakare", "doctor", "Ward 3"],
+    ["inwosu", "Ifeoma Nwosu", "lab_staff", "Ward 3"],
+    ["ybello", "Yusuf Bello", "records_clerk", "Ward 4"],
+    ["gadeleke", "Grace Adeleke", "admin", "Ward 7"],
+  ];
+
+  const accounts = document.getElementById("accounts");
+  DEMO_ACCOUNTS.forEach(([username, name, role, ward]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.innerHTML = `${name}<span>${role} · ${ward}</span>`;
+    button.addEventListener("click", () => {
+      document.getElementById("username").value = username;
+      document.getElementById("password").value = "demo";
+    });
+    accounts.appendChild(button);
+  });
+
+  // Already signed in? Skip straight to the list.
+  if (getUser()) location.replace("/patients.html");
+
+  const form = document.getElementById("login-form");
+  const errorEl = document.getElementById("error");
+  const submit = document.getElementById("submit");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorEl.hidden = true;
+    submit.disabled = true;
+    try {
+      const user = await apiFetch("/login", {
+        method: "POST",
+        body: JSON.stringify({
+          username: document.getElementById("username").value.trim(),
+          password: document.getElementById("password").value,
+        }),
+      });
+      setUser(user);
+      location.href = "/patients.html";
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+      submit.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

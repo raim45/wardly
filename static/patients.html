@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patients · Patient Records</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="app">
+  <span class="brand">Patient Records</span>
+  <span id="nav-ward"></span>
+  <nav>
+    <a href="/patients.html" data-nav="patients">Patients</a>
+    <a href="/audit.html" id="nav-audit" data-nav="audit">Audit log</a>
+    <span id="nav-user"></span>
+    <button class="ghost" id="logout" type="button">Sign out</button>
+  </nav>
+</header>
+
+<main class="page">
+  <h1>Patients you can see</h1>
+  <p class="hint" id="scope"></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Patient</th><th>Ward</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="empty" id="empty" hidden></p>
+  </div>
+</main>
+
+<script src="/app.js"></script>
+<script>
+  const user = renderNav("patients");
+
+  if (user) {
+    document.getElementById("scope").textContent =
+      `Filtered to patients in ${user.ward || "your ward"} that you are assigned to.`;
+
+    apiFetch("/patients")
+      .then((patients) => {
+        const rows = document.getElementById("rows");
+        const empty = document.getElementById("empty");
+
+        if (patients.length === 0) {
+          empty.textContent = "No patients are assigned to you. Try the emergency override from a patient page you can reach, or sign in as another role.";
+          empty.hidden = false;
+          return;
+        }
+
+        patients.forEach((patient) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${escapeHtml(patient.name)}</td>
+            <td><span class="badge ward">${escapeHtml(patient.ward)}</span></td>
+            <td>${patient.is_admitted ? "Admitted" : "Discharged"}</td>
+            <td><a href="/patient.html?id=${patient.id}">Open</a></td>`;
+          rows.appendChild(tr);
+        });
+      })
+      .catch((err) => {
+        const empty = document.getElementById("empty");
+        empty.textContent = err.message;
+        empty.hidden = false;
+      });
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+</script>
+</body>
+</html>

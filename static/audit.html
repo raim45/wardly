@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit log · Patient Records</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="app">
+  <span class="brand">Patient Records</span>
+  <span id="nav-ward"></span>
+  <nav>
+    <a href="/patients.html" data-nav="patients">Patients</a>
+    <a href="/audit.html" id="nav-audit" data-nav="audit">Audit log</a>
+    <span id="nav-user"></span>
+    <button class="ghost" id="logout" type="button">Sign out</button>
+  </nav>
+</header>
+
+<main class="page">
+  <h1>Audit log</h1>
+  <p class="hint">Every authorization decision, newest first.
+    <button class="ghost" id="refresh" type="button" style="margin-left:6px">Refresh</button>
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Time</th><th>User</th><th>Patient</th><th>Action</th><th>Reason</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="empty" id="empty" hidden></p>
+  </div>
+</main>
+
+<script src="/app.js"></script>
+<script>
+  const user = renderNav("audit");
+
+  const ACTION_LABELS = {
+    view_granted: "View granted",
+    view_denied: "View denied",
+    emergency_override: "EMERGENCY OVERRIDE",
+  };
+  const ACTION_CLASSES = {
+    view_granted: "granted",
+    view_denied: "denied",
+    emergency_override: "override",
+  };
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function load() {
+    const rows = document.getElementById("rows");
+    const empty = document.getElementById("empty");
+    rows.innerHTML = "";
+    empty.hidden = true;
+
+    apiFetch("/audit-log")
+      .then((entries) => {
+        if (entries.length === 0) {
+          empty.textContent = "Nothing logged yet.";
+          empty.hidden = false;
+          return;
+        }
+        entries.forEach((entry) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="mono">${escapeHtml(formatTimestamp(entry.timestamp))}</td>
+            <td>${escapeHtml(entry.user_name)}<br><span class="hint">${escapeHtml(entry.user_role)}</span></td>
+            <td>${escapeHtml(entry.patient_name)}</td>
+            <td><span class="badge ${ACTION_CLASSES[entry.action] || "type"}">
+              ${escapeHtml(ACTION_LABELS[entry.action] || entry.action)}</span></td>
+            <td>${entry.reason ? escapeHtml(entry.reason) : "<span class='hint'>—</span>"}</td>`;
+          rows.appendChild(tr);
+        });
+      })
+      .catch((err) => {
+        empty.textContent = err.message;
+        empty.hidden = false;
+      });
+  }
+
+  if (user) {
+    document.getElementById("refresh").addEventListener("click", load);
+    if (user.role !== "admin") {
+      // The nav link is hidden for non-admins; this catches a direct URL visit.
+      page_denied();
+    } else {
+      load();
+    }
+  }
+
+  function page_denied() {
+    document.getElementById("empty").textContent =
+      `Signed in as ${user.role}. Only an admin may read the audit log.`;
+    document.getElementById("empty").hidden = false;
+  }
+</script>
+</body>
+</html>

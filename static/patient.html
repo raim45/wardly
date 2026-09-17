@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient · Patient Records</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="app">
+  <span class="brand">Patient Records</span>
+  <span id="nav-ward"></span>
+  <nav>
+    <a href="/patients.html" data-nav="patients">Patients</a>
+    <a href="/audit.html" id="nav-audit" data-nav="audit">Audit log</a>
+    <span id="nav-user"></span>
+    <button class="ghost" id="logout" type="button">Sign out</button>
+  </nav>
+</header>
+
+<main class="page" id="page"></main>
+
+<script src="/app.js"></script>
+<script>
+  const user = renderNav("patients");
+  const page = document.getElementById("page");
+  const patientId = new URLSearchParams(location.search).get("id");
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function overridePanel(lead) {
+    return `
+      <section class="override-panel">
+        <h2>Emergency override</h2>
+        <p class="hint">
+          ${lead} Your role still limits which record types you can read, and this
+          access is logged with your reason.
+        </p>
+        <div class="row">
+          <input id="override-reason" type="text" maxlength="200"
+                 placeholder="Reason for emergency access (required)">
+          <button class="danger" id="override-go" type="button">Override</button>
+        </div>
+        <p class="error" id="override-error" hidden></p>
+      </section>`;
+  }
+
+  function wireOverride() {
+    const input = document.getElementById("override-reason");
+    const button = document.getElementById("override-go");
+    const errorEl = document.getElementById("override-error");
+    if (!button) return;
+
+    const submit = async () => {
+      const reason = input.value.trim();
+      errorEl.hidden = true;
+      if (!reason) {
+        errorEl.textContent = "An override requires a reason.";
+        errorEl.hidden = false;
+        input.focus();
+        return;
+      }
+      button.disabled = true;
+      try {
+        const data = await apiFetch(`/patients/${patientId}/override`, {
+          method: "POST",
+          body: JSON.stringify({ reason }),
+        });
+        render(data);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.hidden = false;
+        button.disabled = false;
+      }
+    };
+
+    button.addEventListener("click", submit);
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") submit();
+    });
+  }
+
+  function header(data) {
+    const patient = data.patient;
+    const banner = data.override
+      ? `<div class="override-banner">
+           ACCESSED VIA EMERGENCY OVERRIDE
+           <small>Reason recorded: ${escapeHtml(data.override_reason)}</small>
+         </div>`
+      : "";
+    const denied = !data.override && data.records.every((r) => !r.allowed)
+      ? `<p class="hint">You are in the right ward but the role check blocks every
+         record type on this patient.</p>`
+      : "";
+
+    return `
+      ${banner}
+      <section class="patient-head">
+        <h1>${escapeHtml(patient.name)}</h1>
+        <div class="meta">
+          <span class="badge ward">${escapeHtml(patient.ward)}</span>
+          <span>${patient.is_admitted ? "Admitted" : "Discharged"}</span>
+          <span>Patient #${patient.id}</span>
+        </div>
+        ${denied}
+      </section>`;
+  }
+
+  function records(data) {
+    const shown = data.records.filter((r) => r.allowed).length;
+    const items = data.records.map((record) => {
+      const label = RECORD_TYPE_LABELS[record.type] || record.type;
+      if (record.allowed) {
+        return `
+          <article class="record">
+            <header>
+              <span class="badge type">${escapeHtml(label)}</span>
+              <span class="badge granted">Visible</span>
+            </header>
+            <p>${escapeHtml(record.content)}</p>
+          </article>`;
+      }
+      return `
+        <article class="record restricted">
+          <header>
+            <span class="badge type">${escapeHtml(label)}</span>
+            <span class="badge denied">Restricted</span>
+          </header>
+          <p>Hidden — ${escapeHtml(record.restricted_reason)}.</p>
+        </article>`;
+    }).join("");
+
+    return `
+      <h2 style="font-size:15px;margin:22px 0 12px">
+        Records <span class="hint">(${shown} of ${data.records.length} visible to you)</span>
+      </h2>
+      ${items}`;
+  }
+
+  function render(data) {
+    const overrideSection = data.override
+      ? "" // already overridden; no need to offer it again
+      : overridePanel(
+          `Need to see more of ${escapeHtml(data.patient.name)} than your role or
+           assignment allows? An override lifts the ward and assignment checks.`);
+
+    page.innerHTML = header(data) + records(data) + overrideSection;
+    wireOverride();
+  }
+
+  function renderDenied(patientId, message) {
+    page.innerHTML = `
+      <div class="denied-banner">
+        Access denied
+        <small>${escapeHtml(message)}</small>
+      </div>
+      <section class="patient-head">
+        <h1>Patient #${escapeHtml(patientId)}</h1>
+        <p class="hint"><a href="/patients.html">Back to your patient list</a></p>
+      </section>
+      ${overridePanel("You cannot open this patient normally. An override lifts the ward and assignment checks.")}`;
+    wireOverride();
+  }
+
+  if (user) {
+    if (!patientId) {
+      renderDenied("—", "No patient id was given in the URL.");
+    } else {
+      apiFetch(`/patients/${patientId}`)
+        .then(render)
+        .catch((err) => renderDenied(patientId, err.message));
+    }
+  }
+</script>
+</body>
+</html>

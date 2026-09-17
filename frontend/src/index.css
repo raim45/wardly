@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   Every value below is lifted verbatim from DESIGN.md's token table. No page
+   may introduce a colour outside this block. Tailwind v4 turns each entry into
+   utilities, so `--color-primary` gives bg-primary / text-primary /
+   border-primary, `--radius-card` gives rounded-card, and so on.
+
+   Note the root font size is deliberately NOT changed. DESIGN.md's "base 15px,
+   not 16" is about the type scale, not the rem base — shrinking the root would
+   scale every spacing utility and break the 8px unit (p-2 would become 7.5px).
+   So the type sizes are fixed in px below and rem stays at 16px for spacing.
+   --------------------------------------------------------------------------- */
+@theme {
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-ink: #1c2430;
+  --color-ink-muted: #5b6572;
+  --color-border: #e2e5ea;
+  --color-primary: #2a5c8a;
+  --color-primary-hover: #204769;
+  --color-ward-teal: #3f7a72;
+  --color-granted: #2e7d53;
+  --color-denied: #b5462f;
+  --color-override: #c2410c;
+
+  /* Ward badge colours. DESIGN.md page 2 asks for "3-4 ward colors, keep them
+     muted, not primary-saturated" and one consistent colour per ward name.
+     Ward 3 is the ward-teal token itself; the other two are matched to it in
+     lightness and saturation so the three read as one family. */
+  --color-ward-3: #3f7a72;
+  --color-ward-4: #5c6b99;
+  --color-ward-7: #8a6a52;
+
+  --font-serif: 'IBM Plex Serif', Georgia, 'Times New Roman', serif;
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --text-page-title: 26px;
+  --text-page-title--line-height: 1.2;
+  /* DESIGN.md page 3 gives the patient name its own size, distinct from the
+     page title: "patient name (Plex Serif, 22px)". */
+  --text-patient-name: 22px;
+  --text-patient-name--line-height: 1.25;
+  --text-section: 17px;
+  --text-section--line-height: 1.3;
+  --text-body: 15px;
+  --text-body--line-height: 1.5;
+  --text-meta: 13px;
+  --text-meta--line-height: 1.4;
+
+  /* 6px on controls, 8px on cards — not the 16px "SaaS card" default, and not
+     sharp either. */
+  --radius-control: 6px;
+  --radius-card: 8px;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+  }
+
+  /* DESIGN.md: "every interactive element gets a visible 2px primary-coloured
+     outline on keyboard focus. Don't remove browser focus rings without
+     replacing them." */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
