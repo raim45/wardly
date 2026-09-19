@@ -1,8 +1,10 @@
 """FastAPI app: auth, patient list, patient detail, emergency override, audit log.
 
 Run with:  uvicorn main:app --reload
-Then open: http://127.0.0.1:8000/          (login page)
-           http://127.0.0.1:8000/docs      (auto-generated API docs)
+Then open: http://127.0.0.1:8000/docs      (auto-generated API docs)
+
+This process serves the API only. The UI is the React app in `frontend/`, which
+runs on its own dev server — see README.md for how to start both.
 
 Login state lives in the browser's localStorage and travels as an X-User-Id
 header, per README.md. That is trivially forgeable and is fine for a prototype;
@@ -12,7 +14,6 @@ it is not authentication.
 from typing import Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
@@ -274,10 +275,3 @@ def audit_log(user: User = Depends(current_user), db: Session = Depends(get_db))
         }
         for log, user_name, user_role, patient_name in rows
     ]
-
-
-# --------------------------------------------------------------------------
-# Static frontend (registered last so it does not shadow the API routes)
-# --------------------------------------------------------------------------
-
-app.mount("/", StaticFiles(directory="static", html=True), name="static")

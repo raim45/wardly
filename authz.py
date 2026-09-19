@@ -1,8 +1,8 @@
 """The authorization layer. This is the core of the project.
 
 The rule table and the reasoning behind it live in AUTHORIZATION.md, which
-reconciles `authorization_layer.pdf` with this code. Keep the two in sync —
-ROLE_RECORD_ACCESS below is the executable copy.
+reconciles `Hackathon Authorization Layer.pdf` with this code. Keep the two in
+sync — ROLE_RECORD_ACCESS below is the executable copy.
 """
 
 from dataclasses import dataclass

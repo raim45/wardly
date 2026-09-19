@@ -1,10 +1,10 @@
 # Authorization Layer
 
-The authoritative spec is **`authorization_layer.pdf`** (Track C1: Safe Access to
-Patient Records). This file records how that document was turned into code, and
-flags the places where it is ambiguous or in tension with itself. Where this
-file and the PDF disagree, the PDF wins — `authz.py` is the executable copy of
-the table below.
+The authoritative spec is **`Hackathon Authorization Layer.pdf`** (Track C1: Safe
+Access to Patient Records). This file records how that document was turned into
+code, and flags the places where it is ambiguous or in tension with itself. Where
+this file and the PDF disagree, the PDF wins — `authz.py` is the executable copy
+of the table below.
 
 The PDF calls its own role table "a starting point, not a final ruling". The
 mapping below is the interpretation we are building against; it is worth a

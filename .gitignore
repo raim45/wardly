@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Node
+node_modules/
+
+
+# Video pipeline output
+recordings/
+raw_scenes/
+remotion_video/node_modules/
+remotion_video/out/
+
+# old build steps
+build/
+
